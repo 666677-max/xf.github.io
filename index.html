@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消防设施操作员证书查询系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #0066cc;
+            --primary-red: #cc0000;
+            --light-gray: #f5f5f5;
+            --medium-gray: #e0e0e0;
+            --dark-gray: #333333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background-color: #f0f7ff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* 验证码查询页面样式 */
+        .main-container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 68, 128, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--dark-gray);
+        }
+        
+        .captcha-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .captcha-display {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #f0f7ff, #e6f2ff);
+            color: var(--primary-blue);
+            font-weight: bold;
+            font-size: 24px;
+            border-radius: 8px;
+            letter-spacing: 8px;
+            border: 1px solid var(--medium-gray);
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .captcha-display:hover {
+            background: linear-gradient(45deg, #e6f2ff, #d9e9ff);
+        }
+        
+        .captcha-input {
+            padding: 14px 20px;
+            border: 2px solid var(--medium-gray);
+            border-radius: 8px;
+            font-size: 18px;
+            outline: none;
+            transition: all 0.3s;
+            text-align: center;
+            letter-spacing: 5px;
+            width: calc(100% * 5/6);
+        }
+        
+        .captcha-input:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.2);
+        }
+        
+        .error-message {
+            color: var(--primary-red);
+            margin: 10px 0;
+            font-size: 14px;
+            min-height: 20px;
+            display: none;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            background: #0052a3;
+        }
+        
+        /* 证书查询结果页面样式 - 表格形式 */
+        .certificate-container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 68, 128, 0.1);
+            margin: 0 auto;
+            padding: 30px;
+            display: none;
+        }
+        
+        .certificate-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .certificate-table td {
+            padding: 12px 15px;
+            border: 1px solid var(--medium-gray);
+            vertical-align: top;
+        }
+        
+        .certificate-table td:first-child {
+            width: 200px;
+            font-weight: normal;
+            color: var(--dark-gray);
+            background-color: #f9f9f9;
+            text-align: right;
+            vertical-align: middle;
+        }
+        
+        .certificate-table td:last-child {
+            color: var(--dark-gray);
+            font-weight: 500;
+            text-align: left;
+        }
+        
+        .photo-cell {
+            height: 150px;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .user-photo {
+            width: 120px;
+            height: 160px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+            overflow: hidden;
+        }
+        
+        .user-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .bold-text {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- 验证码查询页面 -->
+    <div class="main-container" id="queryPage">
+        <div class="title">请输入验证码</div>
+        
+        <div class="captcha-row">
+            <input type="text" id="captchaInput" class="captcha-input" maxlength="4" placeholder="验证码">
+            <div class="captcha-display" id="captchaDisplay">A3B7</div>
+        </div>
+        
+        <div class="error-message" id="errorMsg">
+            <i class="fas fa-exclamation-circle"></i> 验证码输入错误！
+        </div>
+        
+        <button id="confirmBtn" class="btn">确认</button>
+    </div>
+    
+    <!-- 证书查询结果页面 - 表格形式 -->
+    <div class="certificate-container" id="resultPage">
+        <table class="certificate-table">
+            <tr>
+                <td>照片：</td>
+                <td class="photo-cell">
+                    <div class="user-photo">
+                        <div class="user-photo">
+                        <img src="photo.jpg" alt="高荣辉照片" style="width:100%;height:100%;object-fit:cover;">
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>姓名：</td>
+                <td>高荣辉</td>
+            </tr>
+            <tr>
+                <td>性别：</td>
+                <td>男</td>
+            </tr>
+            <tr>
+                <td>出生日期：</td>
+                <td>2001年11月3日</td>
+            </tr>
+            <tr>
+                <td>证书编号：</td>
+                <td>2836003006706378</td>
+            </tr>
+            <tr>
+                <td>身份证号：</td>
+                <td>532329200111032314</td>
+            </tr>
+            <tr>
+                <td>职业（工种）及等级：</td>
+                <td>消防设施操作员四级</td>
+            </tr>
+            <tr>
+                <td>理论知识考试成绩：</td>
+                <td>77.5</td>
+            </tr>
+            <tr>
+                <td>操作技能考核成绩：</td>
+                <td>64.5</td>
+            </tr>
+            <tr>
+                <td>评定成绩：</td>
+                <td>合格</td>
+            </tr>
+            <tr>
+                <td>颁证日期：</td>
+                <td>2025-8-16</td>
+            </tr>
+            <tr>
+                <td>发证单位：</td>
+                <td>消防职业技能鉴定指导中心</td>
+            </tr>
+            <tr>
+                <td>证书流水码所属号码：</td>
+                <td class="bold-text">120000686</td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        // 生成4位随机验证码（包含大小写字母和数字）
+        function generateCaptcha() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+            let result = '';
+            for (let i = 0; i < 4; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // 初始化验证码
+        let currentCaptcha = generateCaptcha();
+        
+        // 更新验证码显示
+        function updateCaptchaDisplay() {
+            document.getElementById('captchaDisplay').textContent = currentCaptcha;
+        }
+        
+        // 初始化页面
+        function initPage() {
+            updateCaptchaDisplay();
+            
+            // 点击验证码刷新
+            document.getElementById('captchaDisplay').addEventListener('click', function() {
+                currentCaptcha = generateCaptcha();
+                updateCaptchaDisplay();
+                document.getElementById('captchaInput').value = '';
+                document.getElementById('errorMsg').style.display = 'none';
+            });
+            
+            // 验证验证码
+            document.getElementById('confirmBtn').addEventListener('click', function() {
+                const input = document.getElementById('captchaInput').value;
+                const errorMsg = document.getElementById('errorMsg');
+                
+                if(!input || input.length !== 4) {
+                    errorMsg.textContent = "请输入4位验证码";
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                
+                if(input === currentCaptcha) {
+                    errorMsg.style.display = 'none';
+                    // 显示结果页面，隐藏查询页面
+                    document.getElementById('queryPage').style.display = 'none';
+                    document.getElementById('resultPage').style.display = 'block';
+                } else {
+                    errorMsg.textContent = "验证码输入错误！";
+                    errorMsg.style.display = 'block';
+                }
+            });
+            
+            // 按回车键提交
+            document.getElementById('captchaInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.getElementById('confirmBtn').click();
+                }
+            });
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>
